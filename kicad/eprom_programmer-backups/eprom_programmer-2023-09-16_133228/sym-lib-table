@@ -1,4 +1,0 @@
-(sym_lib_table
-  (version 7)
-  (lib (name "eprom_progr")(type "KiCad")(uri "${KIPRJMOD}/eprom_progr.kicad_sym")(options "")(descr ""))
-)
