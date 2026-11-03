@@ -4,10 +4,8 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
-QT       += serialport
-
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT       += core gui widgets serialport
+CONFIG   += c++17
 
 TARGET = 27_programmer
 TEMPLATE = app

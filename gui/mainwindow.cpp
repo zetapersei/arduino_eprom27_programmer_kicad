@@ -164,10 +164,12 @@ void MainWindow::reload_ports()
     for (const QSerialPortInfo &info : infos) {
         QListWidgetItem *item = new QListWidgetItem(info.portName(), ui->portList);
         item->setData(Qt::UserRole, info.systemLocation());
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         if (info.isBusy()){
             item->setText(info.portName() + " (Busy)");
             item->setFlags(item->flags() & ~Qt::ItemIsSelectable);
         }
+#endif
     }
 }
 
@@ -273,9 +275,9 @@ void MainWindow::readData()
 {
     static uint32_t count = 0;
     const QByteArray data = serialPort->readAll();
-    if (data.count()){
-        memcpy(&(bufWork.data())[count], data.data(), data.count());
-        count += data.count();
+    if (data.size()){
+        memcpy(&(bufWork.data())[count], data.data(), data.size());
+        count += data.size();
     }
     ui->progressBar->setValue(count);
     if (count >= bufSize){
@@ -326,12 +328,12 @@ void MainWindow::on_openFileButton_clicked()
         bufCheck.fill(0);
         bufWork.append(file.readAll());
         log(QString("Load from %1 file").arg(fileName));
-        log(QString("Readed %1 bytes").arg(bufWork.count()));
-        if ((uint32_t)bufWork.count() < bufSize) {
-            bufWork.append((bufSize - bufWork.count()), 0xff);
+        log(QString("Readed %1 bytes").arg(bufWork.size()));
+        if ((uint32_t)bufWork.size() < bufSize) {
+            bufWork.append((bufSize - bufWork.size()), 0xff);
         }
-        if ((uint32_t)bufWork.count() < bufSize) {
-            log(QString("Deleated %1 bytes").arg(bufWork.count() - bufSize));
+        if ((uint32_t)bufWork.size() < bufSize) {
+            log(QString("Deleated %1 bytes").arg(bufWork.size() - bufSize));
             bufWork.resize(bufSize);
         }
         bufferClear = false;
@@ -509,12 +511,12 @@ void MainWindow::showVoltage()
 {    
     writeData("v");
     QByteArray readData = serialPort->readAll();
-    QString str = "Programming voltage: ";
-    int8_t pos;
+    const QByteArray voltagePrefix = QByteArrayLiteral("Programming voltage: ");
     while (serialPort->waitForReadyRead(80)){
         readData.append(serialPort->readAll());
-        if ((pos = readData.indexOf(str, 0)) != -1){
-            readData.remove(pos, str.length());
+        const auto pos = readData.indexOf(voltagePrefix);
+        if (pos != -1){
+            readData.remove(pos, voltagePrefix.size());
             ui->progressBar->setValue((QString(readData).simplified().toFloat() * 10));
         }
     }
@@ -550,8 +552,7 @@ void MainWindow::on_progressBar_valueChanged(int value)
 {
     if (updateVoltageConnection){
          double i = value/10.0;
-         QString text;
-         text.sprintf("%02.1f", i);
+         const QString text = QString::asprintf("%02.1f", i);
          ui->progressBar->setFormat(text + QString(" V"));
     }
 }
